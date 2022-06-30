@@ -1,0 +1,100 @@
+////////////////////////////////////////////////////////////////////////////////////////////
+HIP 2022 iOS Workshop
+////////////////////////////////////////////////////////////////////////////////////////////
+iOS cheatsheet:
+https://github.com/randorisec/MobileHackingCheatSheet
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+setup
+////////////////////////////////////////////////////////////////////////////////////////////
+nothing, only a web browser (Chrome recommended) !
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+corellium
+////////////////////////////////////////////////////////////////////////////////////////////
+log in corellium
+
+Default SSH credentials:
+root/alpine
+
+List processes:
+ps -A
+
+////////////////////////////////////////////////////////////////////////////////////////////
+Get UDID
+////////////////////////////////////////////////////////////////////////////////////////////
+mac:
+idevice_id
+81e9e29fdf1bf750b778c7afbb6bf83ee6dec8fd
+
+or
+
+system_profiler SPUSBDataType | sed -n -e '/iPad/,/Serial/p;/iPhone/,/Serial/p;/iPod/,/Serial/p' | grep "Serial Number:" | awk -F ": " '{print $2}'
+81e9e29fdf1bf750b778c7afbb6bf83ee6dec8fd
+
+or 
+
+ioreg -p IOUSB -l | grep "USB Serial"
+  |         "USB Serial Number" = "81e9e29fdf1bf750b778c7afbb6bf83ee6dec8fd"
+
+
+linux:
+usbfluxctl
+
+or
+
+lsusb -s :`lsusb | grep iPhone | cut -d ' ' -f 4 | sed 's/://'` -v | grep iSerial | awk '{print $3}'
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+frida
+////////////////////////////////////////////////////////////////////////////////////////////
+When using frida, phone must be unlocked and the app in the foreground
+
+frida -FU -c mrmacete/objc-method-observer
+     ____
+    / _  |   Frida 12.9.4 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://www.frida.re/docs/home/
+[Remote::DVIA]-> 
+[Remote::DVIA]-> observeSomething('*[className methodName:]');
+[Remote::DVIA]-> observeSomething('*[*ass* *thodName:*]');
+[Remote::DVIA]-> observeSomething('*[* *thodName:*]');
+
+frida-trace -FU -m "-[class method]"
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+rvictl / rvi_capture
+////////////////////////////////////////////////////////////////////////////////////////////
+https://developer.apple.com/library/content/qa/qa1176/_index.html#//apple_ref/doc/uid/DTS10001707-CH1-SECRVI
+
+mac:
+1/ connect device via USB
+2/ rvictl -s UDID
+2/ (optional) sudo launchctl list com.apple.rpmuxd  (<- daemon for remote debugging of mobile devices)
+3/ wireshark -> on rvi0
+
+ex:
+rvictl -s 81e9e29fdf1bf750b778c7afbb6bf83ee6dec8fd
+rvictl -l
+rvictl -x 81e9e29fdf1bf750b778c7afbb6bf83ee6dec8fd
+
+
+Linux:
+https://github.com/gh2o/rvi_capture ( <- doesn't work for iOS13 :/ )
+
+1/ connect device via USB
+2/ ./rvi_capture.py --udid UDID file.pcap
+3/ wireshark file.pcap
+
+ex:
+./rvi_capture.py --udid 81e9e29fdf1bf750b778c7afbb6bf83ee6dec8fd iPhone.pcap
